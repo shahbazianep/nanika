@@ -1,0 +1,22 @@
+{
+    "user": 29388192,
+    "journals": [
+        {
+            "number": 1,
+            "emotion": "calm",
+            "shortResponse": "Nothing.nothing at all",
+            "longResponse": "I have no thoughts because I am so calm at all times"
+        },
+        {
+            "number": 2,
+            "emotion": "upset",
+            "shortResponse": "I am just sad and angry",
+            "longResponse": "My rage consumes me and is matched only by my sadness and grief"
+        }
+    ],
+    "clusters": [
+        { "name": "UCLA", "id": 192891, "members": 33000 },
+        { "name": "BruinBot", "id": 293922, "members": 20 },
+        { "name": "CS Gang", "id": 238829, "members": 58 }
+    ]
+}
