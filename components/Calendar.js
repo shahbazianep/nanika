@@ -6,6 +6,7 @@ import {
     TouchableHighlight,
 } from "react-native";
 import CalCircle from "./CalCircle";
+import { COLORS, MOOD_BORDER_COLORS } from "../assets/constants.js";
 
 export default function Calendar({ monthNum, yearNum, journals }) {
     const maxDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -49,31 +50,25 @@ export default function Calendar({ monthNum, yearNum, journals }) {
 
     const getRandomColor = (day, month, year) => {
         if (!beforeToday(day, month, year)) {
-            return { bgColor: "#EAEAFF", fontColor: "#9D9DB7" };
+            return { bgColor: COLORS.periwinkle, fontColor: COLORS.mediumGrey };
         }
-        const colors = {
-            Joyful: "#CDC577",
-            Calm: "#98D386",
-            Anxious: "#C0C0C0",
-            Upset: "#CD959C",
-            Sad: "#8888BB",
-        };
-        //if (journals[`${month + 1}` + day + year] === undefined) { FIX LATER PROB MORE EFFICIENT
         if (day < 10) {
             day = "0" + day;
         }
-        if (month < 10) {
-            month = "0" + month;
+        if (month < 9) {
+            month = "0" + `${month + 1}`;
         }
-        if (`${month + 1}` + day + year in journals) {
+
+        if (month + day + year in journals) {
             return {
-                bgColor: colors[journals[`${month + 1}` + day + year].emotion],
-                fontColor: "#FCFCFF",
+                bgColor:
+                    MOOD_BORDER_COLORS[journals[month + day + year].emotion][0],
+                fontColor: COLORS.white,
             };
         }
         return {
-            bgColor: "#EAEAFF",
-            fontColor: "#9D9DB7",
+            bgColor: COLORS.periwinkle,
+            fontColor: COLORS.mediumGrey,
         };
     };
 

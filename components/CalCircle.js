@@ -7,22 +7,10 @@ import {
     TouchableHighlight,
 } from "react-native";
 import { db } from "../firebaseConfig";
+import { COLORS } from "../assets/constants.js";
 
 export default function CalCircle({ label, colors, thisMonth }) {
-    // const getRandomEmotion = () => {
-    //     const emotions = ["Sad", "Upset", "Anxious", "Calm", "Joyful"];
-    //     return emotions[Math.floor(Math.random() * 5)];
-    // };
-    //
-    // const addData = async () => {
-    //     var date = "12172022";
-    //     await updateDoc(doc(db, "users", "ZMxK3OhaF42TUs1n1jb3"), {
-    //         [`journals.${date}`]: {
-    //             emotion: getRandomEmotion(),
-    //             thoughts: "no weinkls.",
-    //         },
-    //     });
-    // };
+    function loadDayInfo() {}
 
     return (
         <TouchableOpacity
@@ -47,18 +35,19 @@ export default function CalCircle({ label, colors, thisMonth }) {
                         backgroundColor: thisMonth
                             ? colors.bgColor
                             : "transparent",
-                        borderColor: thisMonth ? "transparent" : "#EAEAFF",
+                        borderColor: thisMonth
+                            ? "transparent"
+                            : COLORS.periwinkle,
                         borderWidth: 1,
                         alignItems: "center",
-                        justifyContent: "start",
+                        justifyContent: "center",
                     }}
                 >
                     <Text
                         style={{
                             fontFamily: "optician-sans",
                             fontSize: 24,
-                            color: thisMonth ? colors.fontColor : "#000000",
-                            marginTop: 7,
+                            color: thisMonth ? colors.fontColor : COLORS.black,
                             textAlign: "center",
                             textAlignVertical: "center",
                         }}

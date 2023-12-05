@@ -4,14 +4,7 @@ import { View } from "react-native";
 //import ExpoTHREE from "expo-three";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 
-const colorBank = ["#CDC577", "#98D386", "#C0C0C0", "#CD959C", "#8888BB"];
-const colorKeys = {
-    Joyful: "#CDC577",
-    Calm: "#98D386",
-    Anxious: "#C0C0C0",
-    Upset: "#CD959C",
-    Sad: "#8888BB",
-};
+import { COLORS, MOOD_BORDER_COLORS, EMOTIONS } from "../assets/constants.js";
 
 function Swarm({ count, color }) {
     const mesh = useRef();
@@ -43,15 +36,15 @@ function Swarm({ count, color }) {
     useFrame((state) => {
         particles.forEach((particle, i) => {
             let { t, factor, speed, xFactor, yFactor, zFactor } = particle;
-            t = particle.t += speed / 5;
+            t = particle.t += speed / 5; //
             const a = Math.cos(t) + Math.sin(t * 1) / 10;
             const b = Math.sin(t) + Math.cos(t * 2) / 10;
             const s = Math.max(1.5, Math.cos(t) * 5);
 
             dummy.position.set(
                 xFactor +
-                    Math.cos((t / 10) * factor) +
-                    (Math.sin(t * 1) * factor) / 10,
+                    20 * Math.cos((t / 100) * factor) +
+                    (Math.sin(t) * factor) / 10,
                 yFactor +
                     Math.sin((t / 10) * factor) +
                     (Math.cos(t * 2) * factor) / 10,
@@ -60,7 +53,7 @@ function Swarm({ count, color }) {
                     (Math.sin(t * 3) * factor) / 10
             );
             // The following changes the size of the balls
-            dummy.scale.set(s, s, s);
+            dummy.scale.set(s * 1.5, s * 1.5, s * 1.5);
             dummy.updateMatrix();
             mesh.current.setMatrixAt(i, dummy.matrix);
         });
@@ -73,15 +66,9 @@ function Swarm({ count, color }) {
                 <sphereGeometry attach="geometry" args={[1, 32, 32]} />
                 <meshPhongMaterial attach="material" color={color} />
             </instancedMesh>
-            {/* <instancedMesh ref={mesh} args={[null, null, 2]}>
-                <sphereGeometry attach="geometry" args={[1, 32, 32]} />
-                <meshPhongMaterial attach="material" color={"#FF00FF"} />
-            </instancedMesh> */}
         </>
     );
 }
-
-const emotions = ["Sad", "Upset", "Calm", "Joyful", "Anxious"];
 
 const getEmotionCount = (emotion, emotions) => {
     if (emotions == undefined) {
@@ -112,18 +99,18 @@ const Cluster = ({ data }) => (
             }}
             setClearColor={"0xffffff"}
         >
-            <color attach="background" args={["#F7F7FF"]} />
+            <color attach="background" args={[COLORS.white]} />
             <ambientLight intensity={1.1} />
             <pointLight position={[100, 100, 100]} intensity={1} />
             <pointLight
                 position={[-100, -100, -100]}
                 intensity={1}
-                color="red"
+                color="#CCCCFF"
             />
-            {emotions.map((emotion, index) => (
+            {EMOTIONS.map((emotion, index) => (
                 <Swarm
                     count={getEmotionCount(emotion, data.emotions)}
-                    color={colorKeys[emotion]}
+                    color={MOOD_BORDER_COLORS[emotion][0]}
                     key={index}
                 />
             ))}

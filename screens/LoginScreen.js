@@ -66,6 +66,7 @@ export default function LoginScreen({ navigation }) {
                 const d = collection(db, "users");
                 await setDoc(doc(d, user.uid), {
                     userEmail: user.email,
+                    uid: user.uid,
                     clusters: [],
                     journals: [],
                 });

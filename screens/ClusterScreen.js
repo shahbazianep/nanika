@@ -10,12 +10,11 @@ import {
     Keyboard,
     TextInput,
     ScrollView,
+    FlatList,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import MoodCircle from "../components/MoodCircle";
 import { useState, useEffect, useContext } from "react";
-import { moodColors, moodBorderColors, emotions } from "../assets/constants";
-import { useCallback } from "react";
+import { COLORS } from "../assets/constants";
 import { db } from "../firebaseConfig.js";
 import {
     collection,
@@ -24,13 +23,37 @@ import {
     getDocs,
     where,
     onSnapshot,
+    arrayUnion,
+    updateDoc,
 } from "firebase/firestore";
 
 export default function ClusterScreen({ route, navigation }) {
     const [clusterList, setClusterList] = useState([]);
-    const test = ["hello", "yes", "hello"];
+    const [query, setQuery] = useState("");
+    const [userClusterList, setUserClusterList] = useState([]);
+
+    async function joinCluster(cluster) {
+        setUserClusterList((prev) => [...prev, cluster.id]);
+        // updateDoc(doc(db, "users", route.params.userID), {
+        //     clusters: arrayUnion({
+        //         name: cluster.name,
+        //         type: cluster.type,
+        //         id: cluster.id,
+        //         members: cluster.members,
+        //     }),
+        // });
+        // alert("joined" + cluster.name);
+    }
+
+    function createUserClusterList() {
+        setUserClusterList([]);
+        route.params.clusters.forEach((d) => {
+            setUserClusterList((prev) => [...prev, d.id]);
+        });
+    }
 
     useEffect(() => {
+        createUserClusterList();
         const fetchClusterData = async () => {
             const clusterQuery = await getDocs(collection(db, "clusters"));
             clusterQuery.forEach((doc) => {
@@ -40,14 +63,18 @@ export default function ClusterScreen({ route, navigation }) {
                         name: doc.data().name,
                         members: doc.data().members,
                         id: doc.data().id,
+                        type: doc.data().type,
                     },
                 ]);
             });
         };
         setClusterList([]);
         fetchClusterData();
-    }, []);
+    }, [navigation]);
 
+    if (!clusterList || userClusterList.length == 0) {
+        return <View></View>;
+    }
     return (
         <View
             style={{
@@ -63,12 +90,12 @@ export default function ClusterScreen({ route, navigation }) {
                     right: 0,
                     height: 90,
                     zIndex: 1,
-                    backgroundColor: "#FCFCFF",
+                    backgroundColor: COLORS.white,
                     flexDirection: "row",
                     paddingTop: 40,
                     justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "#B3B3BB",
+                    borderBottomWidth: 1,
+                    borderColor: COLORS.darkGrey,
                 }}
             >
                 <TouchableOpacity
@@ -83,7 +110,11 @@ export default function ClusterScreen({ route, navigation }) {
                         navigation.navigate("HomeScreen");
                     }}
                 >
-                    <MaterialIcons name="arrow-back" size={24} color="black" />
+                    <MaterialIcons
+                        name="arrow-back"
+                        size={24}
+                        color={COLORS.black}
+                    />
                 </TouchableOpacity>
                 <Text
                     style={{
@@ -103,7 +134,7 @@ export default function ClusterScreen({ route, navigation }) {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View
                         style={{
-                            backgroundColor: "#F7F7FF",
+                            backgroundColor: COLORS.white,
                             flex: 1,
                             justifyContent: "center",
                             paddingTop: 100,
@@ -115,10 +146,10 @@ export default function ClusterScreen({ route, navigation }) {
                                     fontSize: 20,
                                     fontFamily: "tenor-sans",
                                     marginLeft: 12,
-                                    color: "#5C5C5C",
+                                    color: COLORS.darkGrey,
                                 }}
                             >
-                                Search for or create a cluster:
+                                Join or create a cluster:
                             </Text>
                         </View>
                         <View
@@ -135,82 +166,156 @@ export default function ClusterScreen({ route, navigation }) {
                                     marginRight: 18,
                                     width: 270,
                                     borderBottomWidth: 1,
-                                    borderBottomColor: "#484848",
+                                    borderBottomColor: COLORS.darkGrey,
                                     padding: 10,
                                     fontSize: 16,
                                     fontFamily: "tenor-sans",
                                     borderTopLeftRadius: 10,
                                     borderTopRightRadius: 10,
-                                    backgroundColor: "#D9D9D9",
+                                    backgroundColor: COLORS.lightGrey,
                                 }}
+                                value={query}
+                                onChangeText={(t) => setQuery(t)}
                             />
                             <TouchableOpacity
                                 underlayColor={"transparent"}
                                 style={{
                                     padding: 5,
-                                    backgroundColor: "black",
+                                    backgroundColor: COLORS.black,
                                     borderRadius: 10,
                                     height: 52,
                                     width: 52,
                                     alignItems: "center",
                                     justifyContent: "center",
                                 }}
-                                onPress={() => {
-                                    // queryLists();
-                                }}
                             >
                                 <MaterialIcons
                                     name="arrow-forward"
                                     size={32}
-                                    color="white"
+                                    color={COLORS.white}
                                 />
                             </TouchableOpacity>
                         </View>
 
                         <ScrollView>
                             {clusterList.map((cluster, index) => (
-                                <TouchableOpacity
+                                <View
                                     key={index}
-                                    underlayColor={"transparent"}
                                     style={{
-                                        borderColor: "black",
+                                        borderColor: userClusterList.includes(
+                                            cluster.id
+                                        )
+                                            ? COLORS.darkPeriwinkle
+                                            : COLORS.black,
                                         borderWidth: 1,
-                                        borderRadius: 5,
-                                        padding: 20,
+                                        borderRadius: 3,
+                                        paddingLeft: 20,
                                         marginHorizontal: 12,
                                         marginVertical: 6,
                                         flexDirection: "row",
-                                        alignContent: "center",
-                                    }}
-                                    onPress={() => {
-                                        // queryLists();
+                                        alignItems: "center",
+                                        height: 60,
                                     }}
                                 >
-                                    <Text
+                                    <View
                                         style={{
-                                            fontFamily: "tenor-sans",
-                                            fontSize: 20,
-                                            textAlign: "center",
-                                            textAlignVertical: "center",
-                                            color: "#5C5C5C",
+                                            flexDirection: "column",
+                                            marginLeft: 20,
                                         }}
                                     >
-                                        {cluster.name}
-                                    </Text>
-                                    <Text
+                                        <Text
+                                            style={{
+                                                fontFamily: "tenor-sans",
+                                                fontSize: 22,
+                                                textAlignVertical: "center",
+                                                color: COLORS.darkGrey,
+                                            }}
+                                        >
+                                            {cluster.name}
+                                        </Text>
+                                        <Text
+                                            style={{
+                                                fontFamily: "optician-sans",
+                                                color: COLORS.mediumGrey,
+                                                fontSize: 14,
+                                                alignSelf: "center",
+                                            }}
+                                        >
+                                            {cluster.members} members
+                                        </Text>
+                                    </View>
+                                    <View
                                         style={{
-                                            fontFamily: "optician-sans",
-                                            color: "#A6A6AD",
-                                            fontSize: 16,
-                                            alignSelf: "center",
+                                            width: 60,
+                                            height: 25,
+                                            borderTopRightRadius: 3,
+                                            borderTopLeftRadius: 3,
                                             position: "absolute",
-                                            padding: 20,
-                                            right: 0,
+                                            left: -18,
+                                            transform: [{ rotate: "-90deg" }],
+                                            backgroundColor:
+                                                userClusterList.includes(
+                                                    cluster.id
+                                                )
+                                                    ? COLORS.darkPeriwinkle
+                                                    : COLORS.black,
+                                            padding: 5,
                                         }}
                                     >
-                                        {cluster.members} members
-                                    </Text>
-                                </TouchableOpacity>
+                                        <Text
+                                            style={{
+                                                textAlign: "center",
+                                                fontFamily: "optician-sans",
+                                                color: COLORS.white,
+                                                fontSize: 16,
+                                            }}
+                                        >
+                                            #{cluster.id}
+                                        </Text>
+                                    </View>
+
+                                    <TouchableOpacity
+                                        underlayColor={"transparent"}
+                                        style={{
+                                            padding: 5,
+                                            backgroundColor:
+                                                userClusterList.includes(
+                                                    cluster.id
+                                                )
+                                                    ? COLORS.darkPeriwinkle
+                                                    : COLORS.black,
+                                            borderTopRightRadius: 2,
+                                            borderBottomRightRadius: 2,
+                                            height: "104%",
+                                            width: 60,
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            position: "absolute",
+                                            alignSelf: "center",
+                                            right: -1,
+                                        }}
+                                        disabled={
+                                            userClusterList.includes(cluster.id)
+                                                ? true
+                                                : false
+                                        }
+                                        onPress={() => {
+                                            joinCluster(cluster);
+                                        }}
+                                    >
+                                        <MaterialIcons
+                                            name={
+                                                userClusterList.includes(
+                                                    cluster.id
+                                                )
+                                                    ? "check"
+                                                    : "add"
+                                            }
+                                            size={16}
+                                            color={COLORS.white}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
                             ))}
                             <View>
                                 <View style={{ height: 150 }}></View>

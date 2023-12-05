@@ -11,7 +11,12 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import MoodCircle from "../components/MoodCircle";
-import { moodColors, moodBorderColors, emotions } from "../assets/constants";
+import {
+    MOOD_COLORS,
+    MOOD_BORDER_COLORS,
+    EMOTIONS,
+    COLORS,
+} from "../assets/constants";
 import { useRef, useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig.js";
 import {
@@ -21,10 +26,13 @@ import {
     getDocs,
     where,
     onSnapshot,
+    updateDoc,
+    arrayUnion,
 } from "firebase/firestore";
 
 import Cluster from "../components/Cluster";
 import arrow from "../assets/arrow.svg";
+import { randInt } from "three/src/math/MathUtils";
 
 export default function HomeScreen({ route, navigation }) {
     const [loaded] = useFonts({
@@ -38,18 +46,22 @@ export default function HomeScreen({ route, navigation }) {
     function navJournal(emotion) {
         navigation.navigate("JournalScreen", {
             pressedEmotion: emotion,
+            journalNum: String(
+                Object.keys(userData.journals).length + 1
+            ).padStart(3, "0"),
+            userID: auth.currentUser.uid,
         });
     }
 
     useEffect(() => {
         const userID = auth.currentUser.uid;
-        const fetchUserData = async () => {
-            const userQuery = await getDoc(doc(db, "users", userID));
-            setUserData(userQuery.data());
+        const fetchUserData = () => {
+            const userQuery = onSnapshot(doc(db, "users", userID), (doc) => {
+                setUserData(doc.data());
+            });
         };
 
         const fetchClusterData = async () => {
-            //setClusterData({});
             const clusterQuery = await getDocs(collection(db, "clusters"));
             clusterQuery.forEach((doc) => {
                 var docID = doc.id;
@@ -59,18 +71,28 @@ export default function HomeScreen({ route, navigation }) {
         };
         fetchUserData();
         fetchClusterData();
-    }, []);
+    }, [navigation]);
 
     if (!loaded || userData == null || clusterData == {}) {
         return null;
     }
+
+    // randEmotion = () => {
+    //     const ems = ["Joyful", "Calm", "Anxious", "Upset", "Sad"];
+    //     var test = [];
+    //     for (let i = 0; i < 60; i++) {
+    //         test.push(ems[randInt(0, 4)]);
+    //     }
+    //     console.log(test);
+    //     return test;
+    // };
 
     return (
         <View
             style={{
                 flex: 1,
                 flexDirection: "column",
-                backgroundColor: "#F7F7FF",
+                backgroundColor: COLORS.white,
             }}
         >
             <View
@@ -79,12 +101,12 @@ export default function HomeScreen({ route, navigation }) {
                     left: 0,
                     right: 0,
                     height: 90,
-                    backgroundColor: "#FCFCFF",
+                    backgroundColor: COLORS.white,
                     flexDirection: "row",
                     paddingTop: 40,
                     justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "#B3B3BB",
+                    borderBottomWidth: 1,
+                    borderColor: COLORS.darkGrey,
                 }}
             >
                 <TouchableOpacity
@@ -96,6 +118,9 @@ export default function HomeScreen({ route, navigation }) {
                         top: 33,
                     }}
                     onPress={() => {
+                        // await updateDoc(doc(db, "clusters", "526"), {
+                        //     memberEmotions: randEmotion(),
+                        // });
                         navigation.navigate("CalendarScreen", {
                             journals: userData.journals,
                         });
@@ -104,7 +129,7 @@ export default function HomeScreen({ route, navigation }) {
                     <MaterialIcons
                         name="calendar-today"
                         size={24}
-                        color="black"
+                        color={COLORS.black}
                     />
                 </TouchableOpacity>
 
@@ -126,7 +151,10 @@ export default function HomeScreen({ route, navigation }) {
                         top: 33,
                     }}
                     onPress={() => {
-                        navigation.navigate("ClusterScreen");
+                        navigation.navigate("ClusterScreen", {
+                            userID: auth.currentUser.uid,
+                            clusters: userData.clusters,
+                        });
                     }}
                 >
                     <MaterialIcons
@@ -159,7 +187,7 @@ export default function HomeScreen({ route, navigation }) {
                                 fontSize: 24,
                                 fontFamily: "tenor-sans",
                                 textAlign: "center",
-                                color: "#5C5C5C",
+                                color: COLORS.darkGrey,
                             }}
                         >
                             Uh-oh. You aren't a member of any clusters. Join
@@ -215,7 +243,7 @@ export default function HomeScreen({ route, navigation }) {
                             <MaterialIcons
                                 name="keyboard-arrow-left"
                                 size={32}
-                                color="#5C5C5C"
+                                color={COLORS.darkGrey}
                             />
                         </TouchableOpacity>
                         <View
@@ -231,7 +259,7 @@ export default function HomeScreen({ route, navigation }) {
                                 style={{
                                     fontFamily: "optician-sans",
                                     fontSize: 32,
-                                    color: "#5C5C5C",
+                                    color: COLORS.darkGrey,
                                     textAlign: "center",
                                 }}
                             >
@@ -241,7 +269,7 @@ export default function HomeScreen({ route, navigation }) {
                                 style={{
                                     fontFamily: "optician-sans",
                                     fontSize: 16,
-                                    color: "#A6A6AD",
+                                    color: COLORS.mediumGrey,
                                     textAlign: "center",
                                 }}
                             >
@@ -272,7 +300,7 @@ export default function HomeScreen({ route, navigation }) {
                             <MaterialIcons
                                 name="keyboard-arrow-right"
                                 size={32}
-                                color="#5C5C5C"
+                                color={COLORS.darkGrey}
                             />
                         </TouchableOpacity>
                     </View>
@@ -280,22 +308,22 @@ export default function HomeScreen({ route, navigation }) {
             </View>
             <View
                 style={{
-                    backgroundColor: "#FCFCFF",
+                    backgroundColor: COLORS.white,
                     position: "absolute",
                     height: 300,
                     bottom: 0,
                     right: 0,
                     left: 0,
-                    borderTopLeftRadius: 15,
-                    borderTopRightRadius: 15,
+                    borderTopLeftRadius: 40,
+                    borderTopRightRadius: 40,
                     borderWidth: 1,
-                    borderColor: "#CECEDB",
+                    borderColor: COLORS.darkGrey,
                 }}
             >
                 <View
                     style={{
                         height: 5,
-                        backgroundColor: "#A6A6AD",
+                        backgroundColor: "transparent",
                         width: 60,
                         alignSelf: "center",
                         marginTop: 22,
@@ -304,20 +332,25 @@ export default function HomeScreen({ route, navigation }) {
                 />
                 <Text
                     style={{
-                        margin: 10,
+                        marginLeft: 20,
+                        marginVertical: 10,
                         fontFamily: "optician-sans",
                         fontSize: 16,
-                        color: "#A6A6AD",
+                        color: COLORS.mediumGrey,
                     }}
                 >
-                    Journal 001
+                    {"Journal " +
+                        String(
+                            Object.keys(userData.journals).length + 1
+                        ).padStart(3, "0")}
                 </Text>
                 <Text
                     style={{
-                        margin: 10,
+                        marginVertical: 10,
+                        marginLeft: 20,
                         fontFamily: "tenor-sans",
                         fontSize: 24,
-                        color: "#5C5C5C",
+                        color: COLORS.darkGrey,
                     }}
                 >
                     Today, I'm feeling:
@@ -330,13 +363,13 @@ export default function HomeScreen({ route, navigation }) {
                         marginTop: 30,
                     }}
                 >
-                    {emotions.map((emotion, index) => (
+                    {EMOTIONS.map((emotion, index) => (
                         <MoodCircle
-                            color={moodColors[emotion][0]}
+                            color={MOOD_COLORS[emotion][0]}
                             clickFunction={() => navJournal(emotion)}
                             title={emotion}
-                            borderColor={moodBorderColors[emotion][0]}
-                            textColor={"#A6A6AD"}
+                            borderColor={MOOD_BORDER_COLORS[emotion][0]}
+                            textColor={COLORS.mediumGrey}
                             key={index}
                         />
                     ))}

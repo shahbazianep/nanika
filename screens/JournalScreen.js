@@ -6,20 +6,66 @@ import {
     TouchableHighlight,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
-    SafeAreaView,
     Keyboard,
     TextInput,
+    Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import MoodCircle from "../components/MoodCircle";
+import Chip from "../components/Chip";
 import { useState, useEffect, useContext } from "react";
-import { moodColors, moodBorderColors, emotions } from "../assets/constants";
-import { useCallback } from "react";
+import {
+    MOOD_COLORS,
+    MOOD_BORDER_COLORS,
+    EMOTIONS,
+    COLORS,
+} from "../assets/constants";
+import { addDoc, arrayUnion, setDoc, updateDoc, doc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+
+const moreEmotions = [
+    "Joy",
+    "Sadness",
+    "Love",
+    "Anxiety",
+    "Fatigue",
+    "Anger",
+    "Embarrassment",
+    "Pride",
+    "Curiousity",
+    "Hurt",
+    "Boredom",
+    "Surprise",
+    "Hope",
+    "Guilt",
+];
 
 export default function JournalScreen({ route, navigation }) {
     const [highlightedEmotion, setHighlightedEmotion] = useState(
         route.params.pressedEmotion
     );
+
+    const date = new Date();
+    var todayDate;
+    if (date.getMonth() < 9 && date.getDate() < 10) {
+        todayDate =
+            `0${date.getMonth() + 1}` +
+            "0" +
+            date.getDate() +
+            date.getFullYear();
+    } else if (date.getMonth() < 9 && date.getDate() >= 10) {
+        todayDate =
+            `0${date.getMonth() + 1}` + date.getDate() + date.getFullYear();
+    } else if (date.getMonth() >= 9 && date.getDate() < 10) {
+        todayDate =
+            `${date.getMonth() + 1}` +
+            "0" +
+            date.getDate() +
+            date.getFullYear();
+    } else {
+        todayDate =
+            `${date.getMonth() + 1}` + date.getDate() + date.getFullYear();
+    }
 
     const [shortResponse, onChangeShortResponse] = useState("");
     const [longResponse, onChangeLongResponse] = useState("");
@@ -39,19 +85,45 @@ export default function JournalScreen({ route, navigation }) {
         setHighlightedEmotion(emotion);
     }
 
-    function submitLog() {
+    async function submitLog() {
         if (shortResponse == "") {
             setsrError(true);
         }
         if (longResponse == "") {
             setlrError(true);
         }
+        if (longResponse != "" && shortResponse != "") {
+            Alert.alert(
+                "Existing Journal",
+                "You already have a journal for today. Would you like to overwrite your existing journal entry?",
+                [
+                    {
+                        text: "Confirm",
+                        onPress: () => {
+                            updateDoc(doc(db, "users", route.params.userID), {
+                                journals: {
+                                    [todayDate]: {
+                                        longResponse: longResponse,
+                                        shortResponse: shortResponse,
+                                        emotion: highlightedEmotion,
+                                    },
+                                },
+                            });
+                            setTimeout(
+                                () => navigation.navigate("HomeScreen"),
+                                1000
+                            );
+                        },
+                    },
+                    { text: "Cancel", style: "cancel" },
+                ]
+            );
+        }
     }
 
     return (
         <View
             style={{
-                backgroundColor: "pink",
                 display: "flex",
                 flexDirection: "column",
                 flex: 1,
@@ -63,12 +135,12 @@ export default function JournalScreen({ route, navigation }) {
                     right: 0,
                     height: 90,
                     zIndex: 1,
-                    backgroundColor: "#FCFCFF",
+                    backgroundColor: COLORS.white,
                     flexDirection: "row",
                     paddingTop: 40,
                     justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "#B3B3BB",
+                    borderBottomWidth: 1,
+                    borderColor: COLORS.darkGrey,
                 }}
             >
                 <TouchableOpacity
@@ -103,7 +175,7 @@ export default function JournalScreen({ route, navigation }) {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View
                         style={{
-                            backgroundColor: "#F7F7FF",
+                            backgroundColor: COLORS.white,
                             flex: 1,
                             justifyContent: "center",
                         }}
@@ -115,20 +187,20 @@ export default function JournalScreen({ route, navigation }) {
                                     marginLeft: 12,
                                     fontFamily: "optician-sans",
                                     fontSize: 16,
-                                    color: "#A6A6AD",
+                                    color: COLORS.mediumGrey,
                                 }}
                             >
-                                Journal 001
+                                Journal {route.params.journalNum}
                             </Text>
                         </View>
                         <View>
                             <Text
                                 style={{
-                                    marginTop: 10,
+                                    marginTop: 20,
                                     marginLeft: 12,
                                     fontFamily: "tenor-sans",
                                     fontSize: 24,
-                                    color: "#5C5C5C",
+                                    color: COLORS.darkGrey,
                                 }}
                             >
                                 Today, I'm feeling:
@@ -140,28 +212,28 @@ export default function JournalScreen({ route, navigation }) {
                                 display: "flex",
                                 flexDirection: "row",
                                 justifyContent: "space-evenly",
-                                marginTop: 30,
+                                marginTop: 10,
                             }}
                         >
-                            {emotions.map((emotion, index) => (
+                            {EMOTIONS.map((emotion, index) => (
                                 <MoodCircle
                                     clickFunction={() => changeColors(emotion)}
                                     title={emotion}
                                     key={index}
                                     borderColor={
                                         highlightedEmotion == emotion
-                                            ? moodBorderColors[emotion][0]
-                                            : moodBorderColors[emotion][1]
+                                            ? MOOD_BORDER_COLORS[emotion][0]
+                                            : MOOD_BORDER_COLORS[emotion][1]
                                     }
                                     color={
                                         highlightedEmotion == emotion
-                                            ? moodColors[emotion][0]
-                                            : moodColors[emotion][1]
+                                            ? MOOD_COLORS[emotion][0]
+                                            : MOOD_COLORS[emotion][1]
                                     }
                                     textColor={
                                         highlightedEmotion == emotion
-                                            ? "#5C5C5C"
-                                            : "#A6A6AD"
+                                            ? COLORS.darkGrey
+                                            : COLORS.mediumGrey
                                     }
                                 />
                             ))}
@@ -172,15 +244,14 @@ export default function JournalScreen({ route, navigation }) {
                                     fontSize: 20,
                                     fontFamily: "tenor-sans",
                                     marginLeft: 12,
-                                    marginTop: 45,
-                                    color: "#5C5C5C",
+                                    marginTop: 20,
+                                    color: COLORS.darkGrey,
                                 }}
                             >
                                 What other emotions do I feel?
-                                {/* IDEA: ADD OTHER QUESTIONS BASED ON THE USERS SELECTED EMOTION */}
                             </Text>
                         </View>
-
+                        {/* 
                         <TextInput
                             style={{
                                 margin: 12,
@@ -201,7 +272,20 @@ export default function JournalScreen({ route, navigation }) {
                             onChangeText={(newText) =>
                                 handleShortTextInput(newText)
                             }
-                        />
+                        /> */}
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                width: "100%",
+                                padding: 10,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            {moreEmotions.map((e, i) => {
+                                return <Chip>{e}</Chip>;
+                            })}
+                        </View>
+                        {/* 
                         <View>
                             <Text
                                 style={{
@@ -215,15 +299,15 @@ export default function JournalScreen({ route, navigation }) {
                                     ? "Please enter a response."
                                     : shortResponse.length + "/100"}
                             </Text>
-                        </View>
+                        </View> */}
                         <View>
                             <Text
                                 style={{
                                     fontSize: 20,
                                     fontFamily: "tenor-sans",
                                     marginLeft: 12,
-                                    marginTop: 45,
-                                    color: "#5C5C5C",
+                                    marginTop: 20,
+                                    color: COLORS.darkGrey,
                                 }}
                             >
                                 Thoughts about my day:
@@ -236,7 +320,9 @@ export default function JournalScreen({ route, navigation }) {
                                 marginBottom: 4,
                                 height: 150,
                                 borderWidth: 1,
-                                borderBottomColor: lrError ? "red" : "#484848",
+                                borderBottomColor: lrError
+                                    ? "red"
+                                    : COLORS.darkGrey,
                                 borderColor: lrError ? "red" : "transparent",
                                 padding: 10,
                                 paddingTop: 10,
@@ -244,7 +330,7 @@ export default function JournalScreen({ route, navigation }) {
                                 fontFamily: "tenor-sans",
                                 borderTopLeftRadius: 10,
                                 borderTopRightRadius: 10,
-                                backgroundColor: "#D9D9D9",
+                                backgroundColor: COLORS.lightGrey,
                             }}
                             multiline={true}
                             maxLength={400}
@@ -258,7 +344,7 @@ export default function JournalScreen({ route, navigation }) {
                                 style={{
                                     fontFamily: "optician-sans",
                                     fontSize: 12,
-                                    color: lrError ? "red" : "#A6A6AD",
+                                    color: lrError ? "red" : COLORS.mediumGrey,
                                     marginLeft: 12,
                                 }}
                             >
@@ -270,12 +356,12 @@ export default function JournalScreen({ route, navigation }) {
                                 style={{
                                     justifyContent: "center",
                                     alignContent: "center",
-                                    marginTop: 40,
+                                    marginTop: 20,
                                 }}
                             >
                                 <TouchableOpacity
                                     style={{
-                                        backgroundColor: "#D9D9D9",
+                                        backgroundColor: COLORS.lightGrey,
                                         justifyContent: "center",
                                         alignContent: "center",
                                         alignSelf: "center",
